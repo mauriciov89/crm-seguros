@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /prospects/{prospectId} {
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','name','phone','product','stage','asset','premium','nextContact','source','notes','createdAt','updatedAt','activities'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.phone is string
+        && request.resource.data.stage in ['call','quote','meeting','close','won','lost']
+        && request.resource.data.premium is number
+        && request.resource.data.premium >= 0
+        && request.resource.data.activities is list;
+      allow read, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','product','stage','asset','premium','nextContact','source','notes','updatedAt','activities'])
+        && request.resource.data.stage in ['call','quote','meeting','close','won','lost']
+        && request.resource.data.premium is number
+        && request.resource.data.premium >= 0
+        && request.resource.data.activities is list;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
